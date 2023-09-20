@@ -57,13 +57,12 @@ class ChatController extends _$ChatController {
       } else {
         try {
           final response =
-              await ref.watch(chatRepositoryProvider).getOldChat(page);
+              await ref.watch(chatRepositoryProvider).getOldChat((state.asData?.value.pagination?.currentPage ?? 0) + 1);
           state = AsyncData(state.asData!.value.copyWith(
               pagination: response.pagination,
               data: [...response.data, ...state.asData!.value.data]));
           return true;
         } catch (e, stack) {
-          print(stack);
           state = AsyncError(e, stack);
           return false;
         }
