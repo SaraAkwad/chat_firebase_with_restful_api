@@ -28,8 +28,10 @@ class ChatController extends _$ChatController {
   DatabaseReference get _dataBaseRef =>
       FirebaseDatabase.instance.ref().child('chats');
 
+  int get _limit => 10;
+
   Stream<AppResponse<List<String>>> _getRecentChatStream(int page) async* {
-    final databaseRef = _dataBaseRef.limitToFirst(page * 6);
+    final databaseRef = _dataBaseRef.limitToFirst(page * _limit);
 
     yield* databaseRef.onValue.map((DatabaseEvent event) {
       final List<dynamic> rawList = event.snapshot.value as List<dynamic>;
@@ -40,6 +42,7 @@ class ChatController extends _$ChatController {
           message: '',
           statusCode: 200,
           pagination: null));
+      _getRecentChat(page);
       return AppResponse(
           data: chats,
           error: 0,
@@ -49,15 +52,30 @@ class ChatController extends _$ChatController {
     });
   }
 
+  Future<void> _getRecentChat(int page) async {
+    if (state.asData!.value.data.length < page * _limit) {
+      try {
+        final response = await ref
+            .watch(chatRepositoryProvider)
+            .getOldChat((state.asData?.value.pagination?.currentPage ?? 0) + 1);
+        state = AsyncData(state.asData!.value.copyWith(
+            pagination: response.pagination,
+            data: [...response.data, ...state.asData!.value.data]));
+      } catch (e, stack) {
+        state = AsyncError(e, stack);
+      }
+    }
+  }
+
   Future<bool> onLoading(int page) async {
-    if (state.asData!.value.data.length < (page - 1) * 6) {
+    if (state.asData!.value.data.length < (page - 1) * _limit) {
       if (state.asData?.value.pagination != null &&
           page > state.asData!.value.pagination!.totalPages) {
         return false;
       } else {
         try {
-          final response =
-              await ref.watch(chatRepositoryProvider).getOldChat((state.asData?.value.pagination?.currentPage ?? 0) + 1);
+          final response = await ref.watch(chatRepositoryProvider).getOldChat(
+              (state.asData?.value.pagination?.currentPage ?? 0) + 1);
           state = AsyncData(state.asData!.value.copyWith(
               pagination: response.pagination,
               data: [...response.data, ...state.asData!.value.data]));
