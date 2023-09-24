@@ -12,7 +12,7 @@ class ChatScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Chat Screen')),
       body: chatAsyncValue.when(
-        skipLoadingOnReload: true,
+          skipLoadingOnReload: true,
           data: (data) {
             final chats = data.data;
             return AppPaginationWidget(
@@ -25,9 +25,11 @@ class ChatScreen extends ConsumerWidget {
               ),
             );
           },
-          error: (error, stackTrace) => Center(
-                child: Text(error.toString()),
-              ),
+          error: (error, stackTrace) {
+            return Center(
+              child: Text(error.toString()),
+            );
+          },
           loading: () => const Center(
                 child: CircularProgressIndicator.adaptive(),
               )),

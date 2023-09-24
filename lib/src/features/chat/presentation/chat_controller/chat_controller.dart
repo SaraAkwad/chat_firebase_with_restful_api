@@ -32,62 +32,66 @@ class ChatController extends _$ChatController {
 
   Stream<AppResponse<List<String>>> _getRecentChatStream(int page) async* {
     final databaseRef = _dataBaseRef.limitToFirst(page * _limit);
-
-    yield* databaseRef.onValue.map((DatabaseEvent event) {
+    yield* databaseRef.onValue.asyncMap((DatabaseEvent event) async {
       final List<dynamic> rawList = event.snapshot.value as List<dynamic>;
       final List<String> chats = rawList.map((e) => e.toString()).toList();
-      state = AsyncData(AppResponse(
+      if (chats.length < page * _limit) {
+        try {
+          final response =
+              await ref.watch(chatRepositoryProvider).getOldChat(1, _limit);
+          chats.addAll(response.data);
+          state = AsyncData(response.copyWith(data: chats));
+          return response.copyWith(data: chats);
+        } catch (e, st) {
+          state = AsyncError(e, st);
+        }
+      } else {
+        state = AsyncData(AppResponse(
           data: chats,
           error: 0,
           message: '',
           statusCode: 200,
-          pagination: null));
-      _getRecentChat(page);
+          pagination: null,
+        ));
+      }
       return AppResponse(
-          data: chats,
-          error: 0,
-          message: '',
-          statusCode: 200,
-          pagination: null);
+        data: chats,
+        error: 0,
+        message: '',
+        statusCode: 200,
+        pagination: null,
+      );
     });
   }
 
-  Future<void> _getRecentChat(int page) async {
-    if (state.asData!.value.data.length < page * _limit) {
-      try {
-        final response = await ref
-            .watch(chatRepositoryProvider)
-            .getOldChat((state.asData?.value.pagination?.currentPage ?? 0) + 1);
-        state = AsyncData(state.asData!.value.copyWith(
-            pagination: response.pagination,
-            data: [...response.data, ...state.asData!.value.data]));
-      } catch (e, stack) {
-        state = AsyncError(e, stack);
+  Future<bool> onLoading(int page) async {
+    if (state.asData?.value.pagination != null &&
+        state.asData!.value.pagination!.currentPage + 1 >
+            state.asData!.value.pagination!.totalPages) {
+      return false;
+    } else {
+      if (state.asData?.value.pagination != null) {
+        return await _getData();
+      } else if (state.asData!.value.data.length < (page - 1) * _limit) {
+        return await _getData();
+      } else {
+        ref.read(chatPageProvider.notifier).chagePage(page);
+        return true;
       }
     }
   }
 
-  Future<bool> onLoading(int page) async {
-    if (state.asData!.value.data.length < (page - 1) * _limit) {
-      if (state.asData?.value.pagination != null &&
-          page > state.asData!.value.pagination!.totalPages) {
-        return false;
-      } else {
-        try {
-          final response = await ref.watch(chatRepositoryProvider).getOldChat(
-              (state.asData?.value.pagination?.currentPage ?? 0) + 1);
-          state = AsyncData(state.asData!.value.copyWith(
-              pagination: response.pagination,
-              data: [...response.data, ...state.asData!.value.data]));
-          return true;
-        } catch (e, stack) {
-          state = AsyncError(e, stack);
-          return false;
-        }
-      }
-    } else {
-      ref.read(chatPageProvider.notifier).chagePage(page);
+  Future<bool> _getData() async {
+    try {
+      final response = await ref.watch(chatRepositoryProvider).getOldChat(
+          (state.asData?.value.pagination?.currentPage ?? 0) + 1, _limit);
+      state = AsyncData(state.asData!.value.copyWith(
+          pagination: response.pagination,
+          data: [...response.data, ...state.asData!.value.data]));
       return true;
+    } catch (e, stack) {
+      state = AsyncError(e, stack);
+      return false;
     }
   }
 }

@@ -14,10 +14,10 @@ class ChatRepository {
 
   ChatRepository(this._networkService);
 
-  Future<AppResponse<List<String>>> getOldChat(int page) async {
+  Future<AppResponse<List<String>>> getOldChat(int page, int limit) async {
     final response = await _networkService.get(
-        '/happening.chat.chat_room?receiver=anbatoul@gmail.com&page_no=$page&limit=20');
+        '/happening.chat.chat_room?receiver=batoul18@akwad.qa&page_no=$page&limit=$limit');
     return AppResponse<List<String>>.fromJson(response.data,
-        (data) => (data['chat_messages'] as List).map((e) => e['content']).toList() as List<String>);
+        (data) => (data['chat_messages'] as List).map<String>((e) => e['content']).toList());
   }
 }
