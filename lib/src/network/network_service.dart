@@ -85,7 +85,7 @@ class DioAppInterceptors extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    options.headers['Authorization'] = 'token 24f7e4da6031c24:c7e148085479d22';
+    options.headers['Authorization'] = 'token 24f7e4da6031c24:0b92c59116433f8';
     options.headers['Accept-Language'] = languageCode;
     super.onRequest(options, handler);
   }
@@ -99,7 +99,7 @@ class DioAppInterceptors extends Interceptor {
     switch (err.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.receiveTimeout: 
         throw DeadlineExceededException(err.requestOptions, message);
       case DioExceptionType.badResponse:
         switch (err.response?.statusCode) {

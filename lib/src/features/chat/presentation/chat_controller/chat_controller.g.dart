@@ -6,7 +6,21 @@ part of 'chat_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatPageHash() => r'd85b67f8ce2a72575d9e65385bf80999a1dc6303';
+String _$oldChatsHash() => r'498761c3d56d7439dd30f7842f431e68bad5c838';
+
+/// See also [OldChats].
+@ProviderFor(OldChats)
+final oldChatsProvider = NotifierProvider<OldChats, List<String>>.internal(
+  OldChats.new,
+  name: r'oldChatsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$oldChatsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$OldChats = Notifier<List<String>>;
+String _$chatPageHash() => r'6efec36fb06a696d9204559ac2461a19e992a8be';
 
 /// See also [ChatPage].
 @ProviderFor(ChatPage)
@@ -20,7 +34,7 @@ final chatPageProvider = AutoDisposeNotifierProvider<ChatPage, int>.internal(
 );
 
 typedef _$ChatPage = AutoDisposeNotifier<int>;
-String _$chatControllerHash() => r'ce050525865dcb7084c9ef5a79b6e5e012a6838a';
+String _$chatControllerHash() => r'77c03a32bee7cf5d978b4b87ba7ecfb84753a8df';
 
 /// See also [ChatController].
 @ProviderFor(ChatController)
