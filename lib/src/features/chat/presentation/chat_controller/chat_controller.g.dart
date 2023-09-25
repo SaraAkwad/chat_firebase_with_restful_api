@@ -21,21 +21,7 @@ final oldChatsProvider =
 );
 
 typedef _$OldChats = Notifier<AppResponse<List<String>>?>;
-String _$chatPageHash() => r'6efec36fb06a696d9204559ac2461a19e992a8be';
-
-/// See also [ChatPage].
-@ProviderFor(ChatPage)
-final chatPageProvider = AutoDisposeNotifierProvider<ChatPage, int>.internal(
-  ChatPage.new,
-  name: r'chatPageProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$chatPageHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$ChatPage = AutoDisposeNotifier<int>;
-String _$chatControllerHash() => r'627fa661ebefbb8a4ddc146e4963d8e367cd782c';
+String _$chatControllerHash() => r'0630a88596c2e4d5b7eb5977ec38262ea6025a63';
 
 /// See also [ChatController].
 @ProviderFor(ChatController)

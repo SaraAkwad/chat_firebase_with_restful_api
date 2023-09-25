@@ -11,7 +11,7 @@ class AppPaginationWidget extends StatefulWidget {
       this.onRefresh})
       : super(key: key);
   final Widget child;
-  final Future<bool> Function(int page) onLoading;
+  final Future<bool> Function() onLoading;
   final Future<bool> Function()? onRefresh;
 
   final bool enableLoadingOnScrollStart;
@@ -25,11 +25,8 @@ class _AppPaginationWidgetState extends State<AppPaginationWidget> {
   final RefreshController _refreshController =
       RefreshController(initialRefresh: false);
 
-  int _page = 1;
-
   Future<void> _onLoading() async {
-    _page++;
-    if (await widget.onLoading(_page)) {
+    if (await widget.onLoading()) {
       _refreshController.loadComplete();
     } else {
       _refreshController.loadNoData();
