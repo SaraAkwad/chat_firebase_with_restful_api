@@ -85,7 +85,7 @@ class DioAppInterceptors extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    options.headers['Authorization'] = 'token 24f7e4da6031c24:0b92c59116433f8';
+    options.headers['Authorization'] = 'token 24f7e4da6031c24:93accf48edb7326';
     options.headers['Accept-Language'] = languageCode;
     super.onRequest(options, handler);
   }

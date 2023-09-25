@@ -10,12 +10,12 @@ part 'chat_controller.g.dart';
 @Riverpod(keepAlive: true)
 class OldChats extends _$OldChats {
   @override
-  List<String> build() {
-    return [];
+  AppResponse<List<String>>? build() {
+    return null;
   }
 
-  void addToList(List<String> chats) {
-    state = [...state, ...chats];
+  void changeState(AppResponse<List<String>> appResponse) {
+    state = appResponse;
   }
 }
 
@@ -61,9 +61,9 @@ class ChatController extends _$ChatController {
   Future<AppResponse<List<String>>> _processDatabaseEvent(
       DatabaseEvent event, int page) async {
     final List<dynamic> rawList = event.snapshot.value as List<dynamic>;
-    final List<String> chats = [...rawList.map((e) => e.toString()).toList(), ...ref.read(oldChatsProvider)];
+    final List<String> chats = [...rawList.map((e) => e.toString()).toList()];
 
-    if (chats.length < limit * page && state.asData?.value.pagination == null) {
+    if (chats.length < limit * page && ref.read(oldChatsProvider) == null) {
       return await _getOldChatAndMerge(chats);
     }
     return _createAppResponse(chats);
@@ -75,10 +75,11 @@ class ChatController extends _$ChatController {
     try {
       final response =
           await ref.watch(chatRepositoryProvider).getOldChat(1, limit);
-      ref.read(oldChatsProvider.notifier).addToList(response.data);
       chats.addAll(response.data);
       state = AsyncData(response.copyWith(data: chats));
-      return response.copyWith(data: chats);
+      final appResponse = response.copyWith(data: chats);
+      ref.read(oldChatsProvider.notifier).changeState(response);
+      return appResponse;
     } catch (e, st) {
       state = AsyncError(e, st);
       return AppResponse(
@@ -92,6 +93,10 @@ class ChatController extends _$ChatController {
 
   // Constructs an AppResponse object.
   AppResponse<List<String>> _createAppResponse(List<String> chats) {
+    final appResponse = ref.read(oldChatsProvider);
+    if (appResponse != null) {
+      return appResponse.copyWith(data: [...chats, ...appResponse.data]);
+    }
     return AppResponse(
       data: chats,
       error: 0,
@@ -132,11 +137,12 @@ class ChatController extends _$ChatController {
       final response = await ref
           .watch(chatRepositoryProvider)
           .getOldChat(currentPage + 1, limit);
-      ref.read(oldChatsProvider.notifier).addToList(response.data);
-      final mergedData = [...state.asData!.value.data, ...response.data];
-      state = AsyncData(state.asData!.value
-          .copyWith(pagination: response.pagination, data: mergedData));
 
+      final mergedData = [...state.asData!.value.data, ...response.data];
+      final appResponse = state.asData!.value
+          .copyWith(pagination: response.pagination, data: mergedData);
+      ref.read(oldChatsProvider.notifier).changeState(appResponse);
+      state = AsyncData(appResponse);
       return true;
     } catch (e, stack) {
       state = AsyncError(e, stack);
