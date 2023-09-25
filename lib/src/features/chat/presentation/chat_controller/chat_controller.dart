@@ -15,11 +15,17 @@ class OldChats extends _$OldChats {
   }
 
   void changeState(AppResponse<List<String>> appResponse) {
-    state = appResponse;
+    if (state == null) {
+      state = appResponse;
+    } else {
+      state = appResponse.copyWith(
+          pagination: appResponse.pagination,
+          data: [...state!.data, ...appResponse.data]);
+    }
   }
 }
 
-const int limit = 10;
+const int limit = 3;
 
 @riverpod
 class ChatController extends _$ChatController {
@@ -28,15 +34,17 @@ class ChatController extends _$ChatController {
     return _getRecentChatStream();
   }
 
-  DatabaseReference get _databaseRef => FirebaseDatabase.instance.ref().child('chats');
+  DatabaseReference get _databaseRef =>
+      FirebaseDatabase.instance.ref().child('chats');
 
   Stream<AppResponse<List<String>>> _getRecentChatStream() async* {
     yield* _databaseRef.onValue.asyncMap(_processDatabaseEvent);
   }
 
-  Future<AppResponse<List<String>>> _processDatabaseEvent(DatabaseEvent event) async {
+  Future<AppResponse<List<String>>> _processDatabaseEvent(
+      DatabaseEvent event) async {
     final List<String> chats = _convertToChatList(event.snapshot.value);
-    
+
     if (chats.length < limit && _oldChatsStateIsNull()) {
       return await _getOldChatAndMerge(chats);
     }
@@ -51,7 +59,8 @@ class ChatController extends _$ChatController {
     return ref.read(oldChatsProvider) == null;
   }
 
-  Future<AppResponse<List<String>>> _getOldChatAndMerge(List<String> chats) async {
+  Future<AppResponse<List<String>>> _getOldChatAndMerge(
+      List<String> chats) async {
     try {
       final response = await _fetchOldChats(1);
       return _mergeAndSetState(response, chats);
@@ -64,7 +73,8 @@ class ChatController extends _$ChatController {
     return ref.watch(chatRepositoryProvider).getOldChat(page, limit);
   }
 
-  AppResponse<List<String>> _mergeAndSetState(AppResponse<List<String>> response, List<String> chats) {
+  AppResponse<List<String>> _mergeAndSetState(
+      AppResponse<List<String>> response, List<String> chats) {
     chats.addAll(response.data);
     final appResponse = response.copyWith(data: chats);
     ref.read(oldChatsProvider.notifier).changeState(response);
@@ -72,38 +82,38 @@ class ChatController extends _$ChatController {
     return appResponse;
   }
 
-  AppResponse<List<String>> _handleFetchError(dynamic error, StackTrace stackTrace) {
+  AppResponse<List<String>> _handleFetchError(
+      dynamic error, StackTrace stackTrace) {
     state = AsyncError(error, stackTrace);
     return AppResponse(
-      data: [],
-      statusCode: 200,
-      error: 1,
-      message: error.toString(),
-      pagination: null
-    );
+        data: [],
+        statusCode: 200,
+        error: 1,
+        message: error.toString(),
+        pagination: null);
   }
 
   AppResponse<List<String>> _createAppResponse(List<String> chats) {
     final oldChats = ref.read(oldChatsProvider);
-    return oldChats != null ? oldChats.copyWith(data: [...chats, ...oldChats.data]) : _createDefaultAppResponse(chats);
+    return oldChats != null
+        ? oldChats.copyWith(data: [...chats, ...oldChats.data])
+        : _createDefaultAppResponse(chats);
   }
 
   AppResponse<List<String>> _createDefaultAppResponse(List<String> chats) {
     return AppResponse(
-      data: chats,
-      error: 0,
-      message: '',
-      statusCode: 200,
-      pagination: null
-    );
+        data: chats, error: 0, message: '', statusCode: 200, pagination: null);
   }
 
   Future<bool> onLoading() async {
-    return _isPaginationEndReached(state.asData?.value.pagination) ? false : await _getData();
+    return _isPaginationEndReached(state.asData?.value.pagination)
+        ? false
+        : await _getData();
   }
 
   bool _isPaginationEndReached(Pagination? pagination) {
-    return pagination != null && pagination.currentPage + 1 > pagination.totalPages;
+    return pagination != null &&
+        pagination.currentPage + 1 > pagination.totalPages;
   }
 
   Future<bool> _getData() async {
@@ -117,9 +127,11 @@ class ChatController extends _$ChatController {
     }
   }
 
-  bool _mergeDataAndUpdateState(AppResponse<List<String>> response, int currentPage) {
+  bool _mergeDataAndUpdateState(
+      AppResponse<List<String>> response, int currentPage) {
     final mergedData = [...state.asData!.value.data, ...response.data];
-    final appResponse = state.asData!.value.copyWith(pagination: response.pagination, data: mergedData);
+    final appResponse = state.asData!.value
+        .copyWith(pagination: response.pagination, data: mergedData);
     ref.read(oldChatsProvider.notifier).changeState(response);
     state = AsyncData(appResponse);
     return true;
